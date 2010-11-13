@@ -1,0 +1,3 @@
+To copy the Editable Content initializer to your Rails App, with some configuration values, just do:
+
+    rails generate editable_content:install

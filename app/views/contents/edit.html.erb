@@ -1,0 +1,9 @@
+<div id="edit_frame">
+<% form_for(@content) do |f| %>
+<%= f.text_area :body %>
+<div>
+<%= link_to "Help", help_contents_path, {:style=>"float: right; margin: 5px 0 0 0;", :popup => ['Textile Help', 'scrollbars=1,height=400,width=800'] } %>
+<p style="text-align: center;"><%= submit_tag %></p>
+</div>
+<% end %>
+</div>

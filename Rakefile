@@ -5,11 +5,14 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "editable_content"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{Manages User Editable Content.}
+    gem.description = %Q{Creates a new class, Editable_Content, which manages content which can be saved in a database and edited by a user.}
     gem.email = "will@morelandsolutions.com"
     gem.homepage = "http://github.com/wmerrell/editable_content"
-    gem.authors = ["wmerrell"]
+    gem.authors = ["Will Merrell"]
+    gem.files = Dir["{lib}/**/*", "{app}/**/*", "{config}/**/*"]
+    gem.add_dependency "RedCloth", "~> 4.2.3"
+    gem.add_dependency "radius", "~> 0.6.1"
     gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
@@ -47,7 +50,7 @@ Rake::RDocTask.new do |rdoc|
   version = File.exist?('VERSION') ? File.read('VERSION') : ""
 
   rdoc.rdoc_dir = 'rdoc'
-  rdoc.title = "editable_content #{version}"
+  rdoc.title = "EditableContent #{version}"
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
