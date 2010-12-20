@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Will Merrell"]
-  s.date = %q{2010-11-24}
+  s.date = %q{2010-12-19}
   s.description = %q{Creates a new class, Editable_Content, which manages content which can be saved in a database and edited by a user.}
   s.email = %q{will@morelandsolutions.com}
   s.extra_rdoc_files = [
