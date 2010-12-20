@@ -1,5 +1,7 @@
 require 'rubygems'
 require 'test/unit'
+require 'bundler'
+Bundler.setup
 require 'shoulda'
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))

@@ -1,9 +1,142 @@
 = editable_content
 
-Description goes here.
+This plugin manages sections of a page that can be edited by users. I use it to
+manage various boilerplate sections that need to be changed occasionally such as
+welcome messages, contact form instructions, and things like that.
+
+The editing fuctionality uses Textile markup and is extended to uses Radius tags
+to embed function calls that are evaluated and expanded at run time. This allow
+you to include any custom functionality that you care to write.
+
+== Requirements
+
+This gem is for Rails 3 and above only. While I developed most of these
+techniques under Rails 2, that version was too complicated to release.
+
+This gem requires the JQuery javascript library and the JQuery UI library. This
+gem assumes that these files are already included in your page, and does not
+add them.
+
+This gem uses the MarkItUp javascript editor library (http://markitup.jaysalvat.com/home/)
+to create the popup editor. You will need that code in your /public/javascript/
+directory in order for this to work. The stylesheets and javascript for this
+will be added automatically on the pages that use an editor.
+
+This gem also requires the Radius and Redcloth gems.
+
+== Installation
+
+Install the gem:
+
+  gem install editable_content
+
+Add it to your Gemfile:
+
+  gem "editable_content"
+
+This gem inserts stylesheets and javascript into the generated page to create a
+popup editor to edit the section of the page. To allow this, your page must have
+hooks to support adding the required code. Add the following lines to the <head>
+section of the layout file used to genrate the page that will have the editable
+field.
+
+    <%= yield :stylesheet_list %>
+    <%= yield :javascript_list %>
+    <script type="text/javascript">
+      <%= yield :javascript_data %>
+    </script>
+
+In addition make sure the layout file includes jquery.js, jquery-ui.js and a
+UI theme css file.
+
+
+== Basic Usage
+
+Use getContent to create a variable that holds the current content. In this
+example +"maintext"+ is the name of the field, and +@maintext_content+ is the variable
+that holds the content. Put the following line in the controller for your action:
+
+    @maintext_content = getContent("maintext")
+
+Next put the following lines in the view file for your action:
+
+    <%= insert_editable_content -%>            # include once only
+    <%= create_content_editor("maintext") -%>  # include once for each field
+
+Finally display the content somewhere in your view file:
+
+  <%= @maintext_content %>
+
+You may use as many editable fields on a page as you wish, as long as each has a
+unique name for the field and variable. These name can be any valid rails
+variable name that you want.
+
+
+== Security
+
+It will usually be desirable to restrict who can edit a field. You will almost
+never want the general public to be able to edit most of your fields. It is
+assumed that you will have some sort of user authentication, but that is beyond
+the scope of this gem. This uses a global variable to control access. If the
+variable is true, the current user can edit all fields. If it is false then the
+current user cannot edit any field, they are display only.
+
+The way to use this is to set the variable during the page generation process.
+The easiest way to do this is with a before filter that determines whether the
+current user has permission to edit or not. I use this code in my
+application_controller.rb:
+
+  before_filter proc{ setEditableAuthorization(current_user.is?( :editor )) }
+
+You can use any code that evaluates to true or false as the parameter to
++setEditableAuthorization+.
+
+
+== Additional Functionality
+
+This gem includes a function called +processContent+ that allows you to use the
+Textile/Radius engine to expand any text and return it as formated HTML. With
+this you can use any textarea or textfield to enter text that will be rendered
+as HTML.
+
+== Extending Custom Funtionality
+
+The Radius context used to evaluate Radius tags is exposed via a global variable
+called +$editable_content_radius_context+. To use this create a model file as
+follows, and include it in your application_controller.rb file.
+
+    module ExtendContent
+
+      $editable_content_radius_context.with do |c|
+
+        c.define_tag 'test' do |tag|
+          number = (tag.attr['times'] || '1').to_i
+          result = ''
+          number.times { result << 'test ' }
+          result
+        end
+
+        c.define_tag 'user' do |tag|
+          if (!tag.attr['email'].blank?) || (!tag.attr['id'].blank?)
+            if !tag.attr['email'].blank?
+              item = User.where(:email=>tag.attr['email']).email
+            elsif !tag.attr['id'].blank?
+              item = User.find(tag.attr['id']).email
+            end
+          else
+            item = "unknown"
+          end
+          item
+        end
+
+      end # end of context
+
+    end # end of module
+
+
 
 == Note on Patches/Pull Requests
- 
+
 * Fork the project.
 * Make your feature addition or bug fix.
 * Add tests for it. This is important so I don't break it in a
@@ -14,4 +147,4 @@ Description goes here.
 
 == Copyright
 
-Copyright (c) 2010 wmerrell. See LICENSE for details.
+Copyright (c) 2010 Will Merrell. See LICENSE for details.

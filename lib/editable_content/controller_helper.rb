@@ -1,64 +1,112 @@
 module EditableContent
-  module ActionControllerExtensions
-    module ControllerFunctions
+  module ControllerFunctions
 
-      def getContent(name="")
-        text = "<div id=\"ec_edit_frame_#{name}\">" + getInnerContent(name, controller_name(), action_name()) + "</div>"
-        if $editable_content_authorization
-          text = "<img id=\"ec_edit_button_#{name}\" class=\"edit_icon\" width=\"16\" height=\"16\" src=\"/images/pencil.png\" title=\"Edit this Content\" alt=\"Edit this Content Button\" />" + text
-        end
-        text.html_safe
+    #
+    # This function retrieves the editable content from the database.
+    # If +setEditableAuthorization+ is set to true then a button
+    # to launch the editor is prepended to the content.
+    #
+    # Each editable field needs will need one editor and they are created with
+    # the +create_content_editor+ function in the view file.
+    #
+    # === Parameters:
+    # *name* This is the name of the field. This is the same name that will be
+    # passed into the +create_content_editor+ function.
+    #
+    # === Usage:
+    #   def index
+    #     @content = getContent("maintext")
+    #   end
+    #
+    def getContent(name="")
+      text = "<div id=\"ec_edit_frame_#{name}\">" + getInnerContent(name, controller_name(), action_name()) + "</div>"
+      if $editable_content_authorization
+        text = "<img id=\"ec_edit_button_#{name}\" class=\"edit_icon\" width=\"16\" height=\"16\" src=\"/images/pencil.png\" title=\"Edit this Content\" alt=\"Edit this Content Button\" />" + text
       end
+      text.html_safe
+    end
 
-      def processContent(content)
-        if content
-          text = parseContent(content.gsub(/&#39;/, "'"))
+    #
+    # This function formats the supplied content using the same processor that
+    # editable content uses.
+    #
+    # === Parameters:
+    # *content* The text to be converted. This expects a textile formated string
+    # and returns html formated text suitable for display.
+    #
+    # === Usage:
+    #   def index
+    #     @content = processContent("This is *textile* _text_.")
+    #   end
+    #
+    def processContent(content=nil)
+      if content
+        text = parseContent(content.gsub(/&#39;/, "'"))
+      else
+        text = "<div class=\"error\">No Content.</div>".html_safe
+      end
+    end
+
+    # This is used to set up the permissions for the editable content system.
+    # This allows you to control who can edit a editable content field.
+    #
+    # === Parameters:
+    # *permission* A boolean value. If +true+ the editor is created and enabled,
+    # if +false+ the editor is not created.
+    #
+    # === Usage:
+    # The easiest way to use the permissions system is to use a +before_filter+
+    # in the application_controller, like this:
+    #
+    #   before_filter proc{ setEditableAuthorization(current_user.is?( :editor )) }
+    #
+    # In this example, if the current user is an editor then they can edit fields.
+    #
+    def setEditableAuthorization(permission = false)
+      $editable_content_authorization = permission
+    end
+
+  private
+
+    def getInnerContent(name, controller, action)
+      content = EcContent.first( :conditions => { :name => name, :controller => controller, :action => action} )
+      if !content
+        text = "<div class=\"error\">No Content for #{controller}:#{action}.#{name}.</div>"
+        content = EcContent.new({ :name => name, :controller => controller, :action => action, :body => text })
+        content.save
+      else
+        if content.body.blank?
+          text = "<div class=\"error\">Content.body for #{controller}:#{action}.#{name} is blank.</div>"
         else
-          text = "<div class=\"error\">No Content.</div>".html_safe
+          text = parseContent(content.body.gsub(/&#39;/, "'"))
         end
       end
+      text.html_safe
+    end
 
-    private
+    def parseContent(content)
+      parser = Radius::Parser.new($editable_content_radius_context, :tag_prefix => 'r')
+      text = RedCloth.new(parser.parse(content)).to_html.html_safe
+    end
 
-      def getInnerContent(name, controller, action)
-        content = EcContent.first( :conditions => { :name => name, :controller => controller, :action => action} )
-        if !content
-          text = "<div class=\"error\">No Content for #{controller}:#{action}.#{name}.</div>"
-          content = EcContent.new({ :name => name, :controller => controller, :action => action, :body => text })
-          content.save
-        else
-          if content.body.blank?
-            text = "<div class=\"error\">Content.body for #{controller}:#{action}.#{name} is blank.</div>"
-          else
-            text = parseContent(content.body.gsub(/&#39;/, "'"))
-          end
-        end
-        text.html_safe
+    # Define tags on a context that will be available to a template:
+    $editable_content_radius_context = Radius::Context.new do |c|
+
+      c.define_tag 'repeat' do |tag|
+        number = (tag.attr['times'] || '1').to_i
+        result = ''
+        number.times { result << tag.expand }
+        result
       end
 
-      def parseContent(content)
-        parser = Radius::Parser.new($editable_content_radius_context, :tag_prefix => 'r')
-        text = RedCloth.new(parser.parse(content)).to_html.html_safe
+      c.define_tag 'hello' do |tag|
+        "Hello #{tag.attr['name'] || 'World'}!"
       end
 
-      # Define tags on a context that will be available to a template:
-      $editable_content_radius_context = Radius::Context.new do |c|
-
-        c.define_tag 'repeat' do |tag|
-          number = (tag.attr['times'] || '1').to_i
-          result = ''
-          number.times { result << tag.expand }
-          result
-        end
-
-        c.define_tag 'hello' do |tag|
-          "Hello #{tag.attr['name'] || 'World'}!"
-        end
-
-        c.define_tag 'lorem' do |tag|
-          word_count = (tag.attr['wordcount'] || '20').to_i
-          # ===== words
-          words =<<EOS
+      c.define_tag 'lorem' do |tag|
+        word_count = (tag.attr['wordcount'] || '20').to_i
+        # ===== words
+        words =<<EOS
 lorem ipsum dolor sit amet  consectetuer adipiscing elit  integer in mi a mauris ornare sagittis
 suspendisse potenti  suspendisse dapibus dignissim dolor  nam sapien tellus  tempus et  tempus ac
 tincidunt in  arcu  duis dictum  proin magna nulla  pellentesque non  commodo et  iaculis sit amet
@@ -130,48 +178,47 @@ quam  nulla nulla  nunc accumsan  nunc sit amet scelerisque porttitor  nibh pede
 tristique mattis purus eros non velit  aenean sagittis commodo erat  aliquam id lacus  morbi
 vulputate vestibulum elit
 EOS
-          words.gsub!(/\n/,' ')
-          words.gsub!(/  */,' ')
-          words.strip!
-          words = words.split(/ /)
+        words.gsub!(/\n/,' ')
+        words.gsub!(/  */,' ')
+        words.strip!
+        words = words.split(/ /)
 
-          lorem = ""
+        lorem = ""
 
-          # ===== total
-          twn = 0
-          twc = word_count
-          while twn < twc
+        # ===== total
+        twn = 0
+        twc = word_count
+        while twn < twc
 
-            # ===== paragraph
-            pwn = 0
-            pwc = rand(100)+50
-            while pwn < pwc and twn < twc do
+          # ===== paragraph
+          pwn = 0
+          pwc = rand(100)+50
+          while pwn < pwc and twn < twc do
 
-              # ===== sentence
-              swn = 0
-              swc = rand(10)+3
-              while swn < swc and pwn < pwc and twn < twc do
-                word = words[rand(words.length)]
-                if swn == 0
-                  lorem << "#{word.capitalize} "
-                else
-                  lorem << "#{word} "
-                end
-                twn +=1
-                pwn +=1
-                swn +=1
+            # ===== sentence
+            swn = 0
+            swc = rand(10)+3
+            while swn < swc and pwn < pwc and twn < twc do
+              word = words[rand(words.length)]
+              if swn == 0
+                lorem << "#{word.capitalize} "
+              else
+                lorem << "#{word} "
               end
-              lorem << ". "
+              twn +=1
+              pwn +=1
+              swn +=1
             end
-            lorem << "\n\n"
+            lorem << ". "
           end
-          lorem = lorem.gsub!(/ \./,'.')
-        end # end of lorem
+          lorem << "\n\n"
+        end
+        lorem = lorem.gsub!(/ \./,'.')
+      end # end of lorem
 
-      end # end of $context
+    end # end of $context
 
-    end
   end
 end
 
-ActionController::Base.send :include, EditableContent::ActionControllerExtensions::ControllerFunctions
+ActionController::Base.send :include, EditableContent::ControllerFunctions

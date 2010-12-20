@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Will Merrell"]
-  s.date = %q{2010-11-13}
+  s.date = %q{2010-11-24}
   s.description = %q{Creates a new class, Editable_Content, which manages content which can be saved in a database and edited by a user.}
   s.email = %q{will@morelandsolutions.com}
   s.extra_rdoc_files = [
@@ -22,9 +22,9 @@ Gem::Specification.new do |s|
      "app/views/contents/edit.html.erb",
      "app/views/layouts/contents.html.erb",
      "lib/editable_content.rb",
-     "lib/editable_content/application_helpers.rb",
      "lib/editable_content/controller_helper.rb",
      "lib/editable_content/engine.rb",
+     "lib/editable_content/view_helpers.rb",
      "lib/generators/editable_content_generator.rb"
   ]
   s.homepage = %q{http://github.com/wmerrell/editable_content}

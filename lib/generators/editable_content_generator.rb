@@ -10,14 +10,14 @@ class EditableContentGenerator < Rails::Generators::Base
   class_option :"skip-migration", :type => :boolean, :desc => "Don't generate a migration for the EcContent table"
   class_option :"skip-routes", :type => :boolean, :desc => "Don't generate the routes for Editable Contents"
 
-  def install_routes(*args)
+  def install_routes(*args) #:nodoc:
     unless options["skip-routes"]
       route "get  '/contents/edit',   :as => :edit_content"
       route "post '/contents/update', :as => :update_content"
     end
   end
 
-  def copy_files(*args)
+  def copy_files(*args) #:nodoc:
     migration_template MIGRATIONS_FILE, "db/migrate/create_ec_contents.rb" unless options["skip-migration"]
   end
 
